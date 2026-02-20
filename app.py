@@ -138,11 +138,50 @@ st.markdown("""
 
     /* Text area */
     .stTextArea textarea {
-        background: rgba(255,255,255,0.07) !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
+        background: rgba(30, 20, 60, 0.95) !important;
+        border: 1.5px solid rgba(240, 147, 251, 0.5) !important;
         border-radius: 12px !important;
-        color: white !important;
+        color: #ffffff !important;
         font-size: 1rem !important;
+        caret-color: #f093fb !important;
+        -webkit-text-fill-color: #ffffff !important;
+        font-family: 'Segoe UI', sans-serif !important;
+        line-height: 1.6 !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    /* Placeholder text */
+    .stTextArea textarea::placeholder {
+        color: rgba(180, 160, 220, 0.6) !important;
+        -webkit-text-fill-color: rgba(180, 160, 220, 0.6) !important;
+        font-style: italic !important;
+    }
+
+    /* Text area focus */
+    .stTextArea textarea:focus {
+        border-color: #f093fb !important;
+        box-shadow: 0 0 12px rgba(240, 147, 251, 0.3) !important;
+        outline: none !important;
+    }
+
+    /* Text area label */
+    .stTextArea label {
+        color: #f093fb !important;
+        font-weight: 600 !important;
+    }
+
+    /* All general text */
+    p, span, div, h1, h2, h3, h4, h5, label {
+        color: #ffffff;
+    }
+
+    /* Streamlit default input text fix */
+    .stTextInput input {
+        background: rgba(30, 20, 60, 0.95) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        border: 1.5px solid rgba(240, 147, 251, 0.5) !important;
+        border-radius: 10px !important;
     }
 
     /* Metric */

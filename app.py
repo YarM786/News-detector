@@ -184,6 +184,39 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
+    /* File uploader */
+    [data-testid="stFileUploader"] {
+        background: rgba(30, 20, 60, 0.95) !important;
+        border: 2px dashed rgba(240, 147, 251, 0.5) !important;
+        border-radius: 14px !important;
+        padding: 1rem !important;
+    }
+
+    [data-testid="stFileUploader"]:hover {
+        border-color: #f093fb !important;
+        box-shadow: 0 0 16px rgba(240, 147, 251, 0.3) !important;
+    }
+
+    [data-testid="stFileUploader"] label {
+        color: #f093fb !important;
+        font-weight: 600 !important;
+    }
+
+    [data-testid="stFileUploader"] span {
+        color: #ccbbee !important;
+    }
+
+    /* Radio buttons */
+    .stRadio label {
+        color: #ffffff !important;
+        font-size: 1rem !important;
+    }
+
+    .stRadio [data-testid="stMarkdownContainer"] p {
+        color: #f093fb !important;
+        font-weight: 700 !important;
+    }
+
     /* Metric */
     [data-testid="metric-container"] {
         background: rgba(255,255,255,0.05);
@@ -392,48 +425,219 @@ tab1, tab2, tab3 = st.tabs(["🔎 Analyze News", "📜 History", "📖 About"])
 
 # ─── TAB 1: Analyze ───
 with tab1:
-    st.markdown("### 📝 Enter News Article or Text")
 
-    news_input = st.text_area(
-        label="",
-        placeholder="Paste your news article, social media post, or any text here to check if it's real or fake...\n\nمثال: کوئی بھی خبر یہاں paste کریں...",
-        height=220,
-        key="news_input"
+    # ── Input Method Selector ──
+    st.markdown("### 📥 Choose Input Method")
+    input_method = st.radio(
+        "",
+        ["✍️ Type / Paste Text", "📂 Upload File from Laptop"],
+        horizontal=True,
+        key="input_method"
     )
 
+    # Always initialize news_input from session state
+    if "final_text" not in st.session_state:
+        st.session_state.final_text = ""
+
+    news_input = ""
+
+    # ─────────────────────────────
+    # ── Option 1: Text Input ──
+    # ─────────────────────────────
+    if input_method == "✍️ Type / Paste Text":
+        st.markdown("### 📝 Enter News Article or Text")
+
+        # Example news buttons
+        st.markdown("##### 💡 Try Example News:")
+        ex_col1, ex_col2 = st.columns(2)
+        with ex_col1:
+            if st.button("📰 Load Real News Example"):
+                st.session_state.final_text = (
+                    "According to a new study published in the Journal of Science, researchers have found "
+                    "that regular exercise of at least 30 minutes per day significantly reduces the risk of "
+                    "cardiovascular disease. The study analyzed data from over 50,000 participants across "
+                    "10 countries over a period of 5 years. Experts say the findings confirm previous research "
+                    "and recommend moderate physical activity as part of a healthy lifestyle."
+                )
+        with ex_col2:
+            if st.button("⚠️ Load Fake News Example"):
+                st.session_state.final_text = (
+                    "BREAKING: Shocking secret they don't want you to know! Scientists have been BANNED from "
+                    "telling the truth about miracle cure that cures all diseases overnight! The deep state is "
+                    "covering this up!! Share before this gets deleted! You won't believe what doctors are hiding "
+                    "from you. Wake up sheeple, this is 100% PROVEN and they lied to us all along!!!"
+                )
+
+        news_input = st.text_area(
+            label="✏️ Type or Paste your news article here:",
+            value=st.session_state.final_text,
+            placeholder="Paste your news article, social media post, or any text here...\n\nمثال: کوئی بھی خبر یہاں paste کریں...",
+            height=250,
+            key="news_text_area"
+        )
+        # Keep session state in sync
+        st.session_state.final_text = news_input
+
+    # ─────────────────────────────────────────
+    # ── Option 2: File Upload from Laptop ──
+    # ─────────────────────────────────────────
+    else:
+        st.markdown("### 📂 Upload News Article from Your Laptop")
+
+        st.markdown("""
+        <div class='info-card'>
+            <h4>📋 Supported File Types</h4>
+            <p style='color:#ccc; font-size:0.9rem;'>
+            ✅ <strong>.txt</strong> — Plain text file &nbsp;|&nbsp;
+            ✅ <strong>.pdf</strong> — PDF document &nbsp;|&nbsp;
+            ✅ <strong>.docx</strong> — Word document &nbsp;|&nbsp;
+            ✅ <strong>.csv</strong> — CSV file
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        uploaded_file = st.file_uploader(
+            "📁 Click 'Browse files' to select a file from your laptop",
+            type=["txt", "pdf", "docx", "csv"],
+            accept_multiple_files=False,
+            key="file_uploader",
+            help="Select any .txt, .pdf, .docx or .csv file from your computer"
+        )
+
+        if uploaded_file is not None:
+            file_name = uploaded_file.name
+            file_size = uploaded_file.size
+            file_ext = file_name.split(".")[-1].lower()
+
+            # File info
+            st.markdown(f"""
+            <div class='info-card'>
+                <h4>✅ File Loaded from Your Laptop!</h4>
+                <p style='color:#ccc;'>
+                    📁 <strong>File Name:</strong> {file_name}<br>
+                    📦 <strong>File Size:</strong> {file_size / 1024:.1f} KB<br>
+                    🔖 <strong>File Type:</strong> {file_ext.upper()}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            extracted_text = ""
+
+            try:
+                import io
+
+                # ── TXT ──
+                if file_ext == "txt":
+                    raw = uploaded_file.read()
+                    extracted_text = raw.decode("utf-8", errors="ignore")
+
+                # ── PDF ──
+                elif file_ext == "pdf":
+                    try:
+                        import PyPDF2
+                        pdf_bytes = io.BytesIO(uploaded_file.read())
+                        pdf_reader = PyPDF2.PdfReader(pdf_bytes)
+                        for page in pdf_reader.pages:
+                            extracted_text += page.extract_text() or ""
+                        if not extracted_text.strip():
+                            st.warning("⚠️ PDF has no extractable text. Please use a text-based PDF.")
+                    except ImportError:
+                        st.error("❌ PyPDF2 missing. Run: pip install PyPDF2")
+
+                # ── DOCX ──
+                elif file_ext == "docx":
+                    try:
+                        import docx
+                        doc_bytes = io.BytesIO(uploaded_file.read())
+                        doc = docx.Document(doc_bytes)
+                        extracted_text = "\n".join(
+                            [para.text for para in doc.paragraphs if para.text.strip()]
+                        )
+                    except ImportError:
+                        st.error("❌ python-docx missing. Run: pip install python-docx")
+
+                # ── CSV ──
+                elif file_ext == "csv":
+                    try:
+                        import pandas as pd
+                        csv_bytes = io.BytesIO(uploaded_file.read())
+                        df = pd.read_csv(csv_bytes)
+                        text_cols = df.select_dtypes(include="object").columns.tolist()
+                        if text_cols:
+                            extracted_text = " ".join(
+                                df[text_cols[0]].dropna().astype(str).tolist()
+                            )
+                            st.info(f"ℹ️ Reading from column: **{text_cols[0]}**")
+                        else:
+                            st.warning("⚠️ No text column found in CSV.")
+                    except ImportError:
+                        st.error("❌ pandas missing. Run: pip install pandas")
+
+            except Exception as e:
+                st.error(f"❌ Error reading file: {str(e)}")
+
+            # ── Show extracted text and store it ──
+            if extracted_text.strip():
+                st.session_state.final_text = extracted_text
+                news_input = extracted_text
+
+                word_count_preview = len(extracted_text.split())
+                st.success(f"✅ Successfully extracted **{word_count_preview} words** from your file!")
+
+                st.markdown("#### 👁️ Extracted Text Preview:")
+                preview_text = extracted_text[:1000] + ("..." if len(extracted_text) > 1000 else "")
+                st.markdown(f"""
+                <div style='background:rgba(30,20,60,0.95);
+                            border:1.5px solid rgba(240,147,251,0.5);
+                            border-radius:12px;
+                            padding:1.2rem;
+                            max-height:220px;
+                            overflow-y:auto;
+                            color:#ffffff;
+                            font-size:0.92rem;
+                            line-height:1.7;
+                            -webkit-text-fill-color:#ffffff;'>
+                {preview_text}
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # Editable version of extracted text
+                edited = st.text_area(
+                    "✏️ Edit extracted text if needed:",
+                    value=extracted_text,
+                    height=150,
+                    key="edited_upload_text"
+                )
+                news_input = edited
+                st.session_state.final_text = edited
+
+        else:
+            # No file uploaded yet
+            st.markdown("""
+            <div style='background:rgba(30,20,60,0.7);
+                        border: 2px dashed rgba(240,147,251,0.4);
+                        border-radius:14px;
+                        padding:2.5rem;
+                        text-align:center;
+                        color:#ccbbee;'>
+                <p style='font-size:3rem; margin:0;'>📂</p>
+                <p style='font-size:1.1rem; margin:0.5rem 0;'>No file selected yet</p>
+                <p style='font-size:0.85rem; color:#998bbb;'>Click the <strong>"Browse files"</strong> button above to pick a file from your laptop</p>
+            </div>
+            """, unsafe_allow_html=True)
+            news_input = ""
+
+    # ── Analyze Button ──
+    st.markdown("<br>", unsafe_allow_html=True)
     col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
     with col_btn2:
         analyze_btn = st.button("🚀 Analyze Now", key="analyze")
 
-    # Example news buttons
-    st.markdown("#### 💡 Try Example News:")
-    ex_col1, ex_col2 = st.columns(2)
-
-    with ex_col1:
-        if st.button("📰 Example: Real News"):
-            st.session_state["example_text"] = (
-                "According to a new study published in the Journal of Science, researchers have found "
-                "that regular exercise of at least 30 minutes per day significantly reduces the risk of "
-                "cardiovascular disease. The study analyzed data from over 50,000 participants across "
-                "10 countries over a period of 5 years. Experts say the findings confirm previous research "
-                "and recommend moderate physical activity as part of a healthy lifestyle."
-            )
-            st.rerun()
-
-    with ex_col2:
-        if st.button("⚠️ Example: Fake News"):
-            st.session_state["example_text"] = (
-                "BREAKING: Shocking secret they don't want you to know! Scientists have been BANNED from "
-                "telling the truth about miracle cure that cures all diseases overnight! The deep state is "
-                "covering this up!! Share before this gets deleted! You won't believe what doctors are hiding "
-                "from you. Wake up sheeple, this is 100% PROVEN and they lied to us all along!!!"
-            )
-            st.rerun()
-
-    # Load example if selected
-    if "example_text" in st.session_state:
-        news_input = st.session_state.pop("example_text")
-        st.text_area("Loaded Example:", value=news_input, height=150, key="loaded_example")
+    # Use session state as fallback if news_input is empty
+    if not news_input.strip() and st.session_state.get("final_text", "").strip():
+        news_input = st.session_state.final_text
 
     # ─── Analysis ───
     if analyze_btn and news_input.strip():
@@ -519,7 +723,10 @@ with tab1:
                 st.markdown(f"**{real_val*100:.1f}%**")
 
     elif analyze_btn:
-        st.warning("⚠️ Please enter some text before analyzing.")
+        if input_method == "📂 Upload File from Laptop":
+            st.warning("⚠️ Please upload a file first from your laptop, then click Analyze Now.")
+        else:
+            st.warning("⚠️ Please enter or paste some text before analyzing.")
 
 
 # ─── TAB 2: History ───
